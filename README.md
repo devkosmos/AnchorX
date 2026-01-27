@@ -1,4 +1,4 @@
-# NeuroScan Flask App
+# Anchor Flask App
 
 Единое приложение на Flask с интеграцией PostgreSQL (по умолчанию используется SQLite для простоты запуска, но легко переключается на PSQL в `app.py`).
 
