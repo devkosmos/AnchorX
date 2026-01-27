@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Панель клиентов</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Arial, sans-serif; }
+        body { background-color: #f5f7fa; padding: 20px; min-height: 100vh; }
+        .container { max-width: 1200px; margin: 0 auto; }
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; padding-bottom: 15px; border-bottom: 1px solid #e1e5eb; }
+        .logo-container { display: flex; align-items: center; }
+        .logo { background-color: #3498db; color: white; width: 36px; height: 36px; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 18px; margin-right: 12px; font-weight: bold; }
+        .main-panel { background: white; border-radius: 10px; box-shadow: 0 3px 10px rgba(0, 0, 0, 0.08); padding: 25px; }
+        .add-button { background-color: #3498db; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; margin-bottom: 20px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { padding: 14px 16px; text-align: left; border-bottom: 1px solid #eef1f5; }
+        th { background-color: #f8f9fa; font-weight: 600; }
+        .status { padding: 5px 10px; border-radius: 4px; font-size: 13px; }
+        .status-pending { background-color: #ffeb3b; color: #ff6f00; }
+        .delete-btn { background-color: #ff5252; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; }
+        .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: none; align-items: center; justify-content: center; }
+        .modal { background: white; padding: 20px; border-radius: 10px; width: 400px; }
+        .form-group { margin-bottom: 15px; }
+        .form-control { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; }
+        .btn-primary { background: #3498db; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; }
+        .logout-btn { color: #e74c3c; text-decoration: none; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="logo-container">
+                <div class="logo">A</div>
+                <h1>Панель управления</h1>
+            </div>
+            <div>
+                <a href="{{ url_for('logout') }}" class="logout-btn">Выйти</a>
+            </div>
+        </div>
+
+        <div class="main-panel">
+            <button class="add-button" onclick="showModal()"><i class="fas fa-plus"></i> Добавить клиента</button>
+            
+            <table>
+                <thead>
+                    <tr>
+                        <th>Имя</th>
+                        <th>Email</th>
+                        <th>Телефон</th>
+                        <th>Статус</th>
+                        <th>Действия</th>
+                    </tr>
+                </thead>
+                <tbody id="clients-body">
+                    {% for client in clients %}
+                    <tr id="client-{{ client.id }}">
+                        <td>{{ client.name }}</td>
+                        <td>{{ client.email }}</td>
+                        <td>{{ client.phone }}</td>
+                        <td><span class="status status-pending">{{ client.status }}</span></td>
+                        <td><button class="delete-btn" onclick="deleteClient({{ client.id }})">Удалить</button></td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div id="modal" class="modal-overlay">
+        <div class="modal">
+            <h3>Добавить клиента</h3>
+            <br>
+            <div class="form-group">
+                <label>Имя</label>
+                <input type="text" id="name" class="form-control">
+            </div>
+            <div class="form-group">
+                <label>Email</label>
+                <input type="email" id="email" class="form-control">
+            </div>
+            <div class="form-group">
+                <label>Телефон</label>
+                <input type="text" id="phone" class="form-control">
+            </div>
+            <button class="btn-primary" onclick="addClient()">Сохранить</button>
+            <button onclick="hideModal()" style="background:none; border:none; cursor:pointer; margin-left:10px;">Отмена</button>
+        </div>
+    </div>
+
+    <script>
+        function showModal() { document.getElementById('modal').style.display = 'flex'; }
+        function hideModal() { document.getElementById('modal').style.display = 'none'; }
+
+        async function addClient() {
+            const name = document.getElementById('name').value;
+            const email = document.getElementById('email').value;
+            const phone = document.getElementById('phone').value;
+            
+            const response = await fetch('/api/clients', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({name, email, phone})
+            });
+            
+            if (response.ok) window.location.reload();
+        }
+
+        async function deleteClient(id) {
+            if (!confirm('Удалить клиента?')) return;
+            const response = await fetch(`/api/clients/${id}`, { method: 'DELETE' });
+            if (response.ok) document.getElementById(`client-${id}`).remove();
+        }
+    </script>
+</body>
+</html>
