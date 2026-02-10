@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Профиль</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Arial, sans-serif; }
+        body { background-color: #f5f7fa; min-height: 100vh; display: flex; justify-content: center; padding: 20px; }
+        .profile-card { background: white; width: 100%; max-width: 600px; border-radius: 4px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); overflow: hidden; }
+        .profile-header { background: #f0f0f0; padding: 15px; text-align: center; border-bottom: 1px solid #ddd; font-size: 18px; color: #333; }
+        .profile-body { padding: 30px; }
+        .section-title { font-size: 18px; color: #666; margin-bottom: 20px; }
+        .info-row { display: flex; margin-bottom: 15px; align-items: flex-start; }
+        .info-label { width: 180px; color: #666; font-size: 14px; position: relative; }
+        .info-value { flex: 1; color: #333; font-size: 14px; font-weight: 500; }
+        .help-icon { color: #999; font-size: 12px; cursor: pointer; margin-left: 3px; }
+        .unconfirmed { color: #d9534f; font-size: 12px; }
+        .btn-confirm { background: #3498db; color: white; border: none; padding: 8px 15px; border-radius: 3px; cursor: pointer; font-size: 12px; margin-top: 5px; text-transform: uppercase; }
+        .add-more { color: #3498db; font-size: 13px; text-decoration: none; display: block; margin-top: 5px; }
+        .btn-change { background: #3498db; color: white; border: none; padding: 10px 20px; border-radius: 3px; cursor: pointer; font-size: 14px; text-transform: uppercase; margin-top: 10px; }
+        .divider { height: 1px; background: #eee; margin: 30px 0; }
+        .form-group { margin-bottom: 20px; }
+        .form-label { display: block; color: #666; font-size: 14px; margin-bottom: 8px; }
+        .input-wrapper { position: relative; display: flex; align-items: center; }
+        .form-control { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 3px; font-size: 14px; }
+        .toggle-password { position: absolute; right: -30px; color: #666; cursor: pointer; }
+        .back-link { display: block; text-align: center; margin-top: 20px; color: #3498db; text-decoration: none; font-size: 14px; }
+    </style>
+</head>
+<body>
+    <div class="profile-card">
+        <div class="profile-header">Профиль</div>
+        <div class="profile-body">
+            <h2 class="section-title">Личные данные</h2>
+            
+            <div class="info-row">
+                <div class="info-label">
+                    Email <i class="far fa-question-circle help-icon"></i>
+                    {% if not user.email_confirmed %}<br><span class="unconfirmed">(не подтверждён):</span>{% endif %}
+                </div>
+                <div class="info-value">
+                    {{ user.email }}<br>
+                    {% if not user.email_confirmed %}
+                    <button class="btn-confirm">Подтвердить Email</button>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="info-row">
+                <div class="info-label">Телефон:</div>
+                <div class="info-value">{{ user.phone or 'Не указан' }}</div>
+            </div>
+
+            <div class="info-row">
+                <div class="info-label">Часовой пояс:</div>
+                <div class="info-value">{{ user.timezone }}</div>
+            </div>
+
+            <div class="info-row">
+                <div class="info-label">Email для уведомлений: <i class="far fa-question-circle help-icon"></i></div>
+                <div class="info-value">
+                    {{ user.notification_email or user.email }}
+                    <a href="#" class="add-more">+ Добавить еще</a>
+                </div>
+            </div>
+
+            <div class="info-row">
+                <div class="info-label">Телефон для уведомлений: <i class="far fa-question-circle help-icon"></i></div>
+                <div class="info-value">{{ user.notification_phone or user.phone or 'Не указан' }}</div>
+            </div>
+
+            <button class="btn-change" onclick="alert('Функция редактирования данных будет доступна в следующем обновлении')">Изменить</button>
+
+            <div class="divider"></div>
+
+            <h2 class="section-title">Смена пароля</h2>
+            
+            <div class="form-group">
+                <label class="form-label">Введите новый пароль:</label>
+                <div class="input-wrapper">
+                    <input type="password" id="new_password" class="form-control">
+                    <i class="far fa-eye toggle-password" onclick="togglePassword('new_password')"></i>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Повторите пароль:</label>
+                <div class="input-wrapper">
+                    <input type="password" id="confirm_password" class="form-control">
+                    <i class="far fa-eye toggle-password" onclick="togglePassword('confirm_password')"></i>
+                </div>
+            </div>
+
+            <button class="btn-change" onclick="changePassword()">Изменить пароль</button>
+
+            <a href="{{ url_for('panel') }}" class="back-link">Вернуться в панель</a>
+        </div>
+    </div>
+
+    <script>
+        function togglePassword(id) {
+            const input = document.getElementById(id);
+            input.type = input.type === 'password' ? 'text' : 'password';
+        }
+
+        async function changePassword() {
+            const new_password = document.getElementById('new_password').value;
+            const confirm_password = document.getElementById('confirm_password').value;
+
+            if (!new_password) {
+                alert('Введите новый пароль');
+                return;
+            }
+
+            const response = await fetch('/api/profile/change-password', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({new_password, confirm_password})
+            });
+
+            const result = await response.json();
+            if (result.success) {
+                alert('Пароль успешно изменен');
+                document.getElementById('new_password').value = '';
+                document.getElementById('confirm_password').value = '';
+            } else {
+                alert(result.message || 'Ошибка при смене пароля');
+            }
+        }
+    </script>
+</body>
+</html>

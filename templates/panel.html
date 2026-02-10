@@ -35,7 +35,8 @@
                 <div class="logo">A</div>
                 <h1>Панель управления</h1>
             </div>
-            <div>
+            <div style="display: flex; align-items: center; gap: 20px;">
+                <a href="{{ url_for('profile') }}" style="text-decoration: none; color: #3498db; font-weight: bold;"><i class="fas fa-user-circle"></i> Профиль</a>
                 <a href="{{ url_for('logout') }}" class="logout-btn">Выйти</a>
             </div>
         </div>

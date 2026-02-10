@@ -21,6 +21,10 @@ class User(db.Model):
     email = db.Column(db.String(120), unique=True, nullable=False)
     phone = db.Column(db.String(20), nullable=True)
     password = db.Column(db.String(200), nullable=False)
+    email_confirmed = db.Column(db.Boolean, default=False)
+    timezone = db.Column(db.String(100), default='UTC +03:00 Europe/Moscow')
+    notification_email = db.Column(db.String(120), nullable=True)
+    notification_phone = db.Column(db.String(20), nullable=True)
 
 class Client(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -68,8 +72,49 @@ def register():
 def panel():
     if 'user_id' not in session:
         return redirect(url_for('login'))
+    user = User.query.get(session['user_id'])
     clients = Client.query.all()
-    return render_template('panel.html', clients=clients)
+    return render_template('panel.html', clients=clients, user=user)
+
+@app.route('/profile')
+def profile():
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    user = User.query.get(session['user_id'])
+    return render_template('profile.html', user=user)
+
+@app.route('/api/profile/update', methods=['POST'])
+def update_profile():
+    if 'user_id' not in session:
+        return jsonify({'error': 'Unauthorized'}), 401
+    user = User.query.get(session['user_id'])
+    data = request.get_json()
+    
+    user.email = data.get('email', user.email)
+    user.phone = data.get('phone', user.phone)
+    user.timezone = data.get('timezone', user.timezone)
+    user.notification_email = data.get('notification_email', user.notification_email)
+    user.notification_phone = data.get('notification_phone', user.notification_phone)
+    
+    db.session.commit()
+    return jsonify({'success': True})
+
+@app.route('/api/profile/change-password', methods=['POST'])
+def change_password():
+    if 'user_id' not in session:
+        return jsonify({'error': 'Unauthorized'}), 401
+    user = User.query.get(session['user_id'])
+    data = request.get_json()
+    
+    new_password = data.get('new_password')
+    confirm_password = data.get('confirm_password')
+    
+    if new_password != confirm_password:
+        return jsonify({'success': False, 'message': 'Пароли не совпадают'})
+    
+    user.password = generate_password_hash(new_password)
+    db.session.commit()
+    return jsonify({'success': True})
 
 @app.route('/logout')
 def logout():
